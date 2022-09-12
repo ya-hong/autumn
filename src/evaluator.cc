@@ -1,6 +1,8 @@
 #include "evaluator.h"
 #include "builtin.h"
 
+#include <thread>
+
 namespace autumn {
 
 Evaluator::Evaluator() :
@@ -23,6 +25,8 @@ void Evaluator::reset_env() {
 std::shared_ptr<object::Object> Evaluator::eval(
         const ast::Node* node,
         std::shared_ptr<object::Environment>& env) const {
+    
+
     if (node == nullptr) {
         std::string message;
         for (size_t i = 0; i < _parser.errors().size(); ++i) {
@@ -134,7 +138,15 @@ std::shared_ptr<object::Object> Evaluator::eval(
             return args[0];
         }
 
-        return apply_function(function.get(), args);
+        std::shared_ptr<object::Object>* true_obj_ptr = new std::shared_ptr<object::Object>;
+
+        std::thread t([this, function, args=std::move(args)](std::shared_ptr<object::Object>* obj) mutable {
+            *obj = apply_function(function.get(), args);
+        }, true_obj_ptr);
+
+        return std::make_shared<object::Async>(std::move(t), true_obj_ptr);
+
+        // return apply_function(function.get(), args);
 
     } else if (typeid(*node) == typeid(ast::IndexExpression)) {
         auto n = node->cast<ast::IndexExpression>();
@@ -158,6 +170,12 @@ std::shared_ptr<object::Object> Evaluator::eval(
 std::shared_ptr<object::Object> Evaluator::eval_index_expression(
         const object::Object* obj,
         const object::Object* index) const {
+    if (typeid(*obj) == typeid(object::Async)) {
+        obj = obj->cast<object::Async>()->object().get();
+    }
+    if (typeid(*index) == typeid(object::Async)) {
+        index = index->cast<object::Async>()->object().get();
+    }
     if (typeid(*obj) == typeid(object::Array)
             && typeid(*index) == typeid(object::Integer)) {
         auto a = obj->cast<object::Array>();
@@ -243,10 +261,20 @@ std::shared_ptr<object::Object> Evaluator::eval_program(
         std::shared_ptr<object::Environment>& env) const {
     std::shared_ptr<object::Object> result;
 
-    for (auto& stat : statments) {
+    for (int i = 0; i < (int)statments.size(); ++i) {
+        auto& stat = statments[i];
         result = eval(stat.get(), env);
         if (result == nullptr) {
             continue;
+        }
+
+        if (typeid(*result) == typeid(object::Async)) {
+            if (i == (int)statments.size() - 1) {
+                result = result->cast<object::Async>()->object();
+            }
+            else {
+                result->cast<object::Async>()->detach();
+            }
         }
 
         if (typeid(*result) == typeid(object::ReturnValue)) {
@@ -300,6 +328,11 @@ std::shared_ptr<object::Object> Evaluator::eval_prefix_expression(
         const std::string& op,
         const object::Object* right,
         std::shared_ptr<object::Environment>& env) const {
+
+    if (typeid(*right) == typeid(object::Async)) {
+        right = right->cast<object::Async>()->object().get();
+    }
+
     if (op == "!") {
         return eval_bang_operator_expression(right);
     } else if (op == "-") {
@@ -422,6 +455,14 @@ std::shared_ptr<object::Object> Evaluator::eval_infix_expression(
         const object::Object* left,
         const object::Object* right,
         std::shared_ptr<object::Environment>& env) const {
+
+    if (typeid(*left) == typeid(object::Async)) {
+        left = left->cast<object::Async>()->object().get();
+    }
+    if (typeid(*right) == typeid(object::Async)) {
+        right = right->cast<object::Async>()->object().get();
+    }    
+
     // 如果你想对其它类型做单独处理，改这个位置即可
     // 原作者在其书中调侃：十年后，当 Monkey 语言出名后，可能会有人在 stackoverflow 上提问：
     // 为什么在 Monkey 语言中(当前我们的项目叫 Autum)，整型值的比较比其它类型要慢呢？

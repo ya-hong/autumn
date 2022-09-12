@@ -13,6 +13,7 @@ std::shared_ptr<object::Object> False(new object::Boolean(false));
 } // namespace constants
 
 std::unordered_map<int, std::string> Type::_type_to_name = {
+    {ASYNC_OBJECT, "ASYNC"},
     {INTEGER_OBJECT, "INTEGER"},
     {BOOLEAN_OBJECT, "BOOLEAN"},
     {STRING_OBJECT, "STRING"},

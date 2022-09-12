@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <thread>
 
 #include "color.h"
 #include "program.h"
@@ -14,6 +15,7 @@ namespace object {
 class Type {
 public:
     enum TypeValue {
+        ASYNC_OBJECT,
         INTEGER_OBJECT,
         BOOLEAN_OBJECT,
         STRING_OBJECT,
@@ -86,6 +88,41 @@ extern std::shared_ptr<object::Object> True;
 extern std::shared_ptr<object::Object> False;
 
 } // namespace constants
+
+class Async : public Object {
+public:
+    Async(std::thread &&t, std::shared_ptr<Object> *obj) :
+            Object(Type::ASYNC_OBJECT),
+            _thread(std::make_unique<std::thread>(std::move(t))),
+            _object(obj) {
+        _joined = false;
+    }
+
+    void join() const {
+        if (_thread->joinable()) {
+            _thread->join();
+        }
+    }
+    void detach() const {
+        if (_thread->joinable()) {
+            _thread->detach();
+        }
+    }
+
+    std::shared_ptr<Object> object() const {
+        join();
+        return (*_object);
+    }
+
+    std::string inspect() const override {
+        join();
+        return object()->inspect();
+    }
+private:
+    bool _joined;
+    std::unique_ptr<std::thread> _thread;
+    std::shared_ptr<Object> *_object;
+};
 
 class Integer : public Object, public Hasher {
 public:

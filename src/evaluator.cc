@@ -210,6 +210,15 @@ std::shared_ptr<object::Object> Evaluator::apply_function(
 
     std::shared_ptr<object::Object> val = object::constants::Null;
 
+    if (typeid(*fn) == typeid(object::Async)) {
+        fn = fn->cast<object::Async>()->object().get();
+    }
+    for (auto &object : args) {
+        if (typeid(*object) == typeid(object::Async)) {
+            object = object->cast<object::Async>()->object();
+        }
+    }
+
     if (typeid(*fn) == typeid(object::Function)) {
         auto function = fn->cast<object::Function>();
         auto extended_env = extend_function_env(function, args);

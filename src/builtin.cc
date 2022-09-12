@@ -1,5 +1,6 @@
 #include "builtin.h"
 #include "format.h"
+#include "evaluator.h"
 
 namespace autumn {
 namespace builtin {
@@ -12,6 +13,7 @@ std::map<std::string, object::BuiltinFunction> BUILTINS = {
     {"rest", rest},
     {"puts", puts},
     {"range", range},
+    {"map", map},
 };
 
 std::shared_ptr<object::Object> len(const std::vector<std::shared_ptr<object::Object>>& args) {
@@ -139,6 +141,31 @@ std::shared_ptr<object::Object> range(const std::vector<std::shared_ptr<object::
         obj->append(std::make_shared<object::Integer>(i));
     }
     return obj;
+}
+
+std::shared_ptr<object::Object> map(const std::vector<std::shared_ptr<object::Object>>& args) {
+    if (args.size() != 2) {
+        return std::make_shared<object::Error>(format("wrong number of arguments. expected 2, got {}", args.size()));
+    }
+    if (!(typeid(*args[0]) == typeid(object::Array) && typeid(*args[1]) == typeid(object::Function))) {
+        return std::make_shared<object::Error>(
+            format(
+                "argument type to `map` is (Array, Function), get ({}, {})", 
+                args[0]->type(), args[1]->type())
+        );
+    }
+
+    Evaluator evaluator;
+    auto obj = args[0]->cast<object::Array>();
+    auto fn = args[1] -> cast<object::Function>();
+    auto array = obj->elements();
+    for (int i = 0; i < array.size(); ++i) {
+        std::vector<std::shared_ptr<object::Object>> args = {array[i]};
+        auto env = evaluator.extend_function_env(fn, args);
+        array[i] = evaluator.eval(fn->body(), env);
+    }
+    auto new_obj = std::make_shared<object::Array>(array);
+    return new_obj;
 }
 
 } // namespace builtin

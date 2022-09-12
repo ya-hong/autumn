@@ -4,11 +4,13 @@
 #include "format.h"
 #include "object.h"
 #include "parser.h"
+#include "builtin.h"
 
 namespace autumn {
  
 class Evaluator {
 public:
+    friend std::shared_ptr<object::Object> builtin::map(const std::vector<std::shared_ptr<object::Object>>& args);
     Evaluator();
     // 使用 shared_ptr 的原因是有些对象是可以共享复用的
     // 比如 true/false/null

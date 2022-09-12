@@ -17,6 +17,7 @@ std::shared_ptr<object::Object> push(const std::vector<std::shared_ptr<object::O
 std::shared_ptr<object::Object> rest(const std::vector<std::shared_ptr<object::Object>>& args);
 std::shared_ptr<object::Object> puts(const std::vector<std::shared_ptr<object::Object>>& args);
 std::shared_ptr<object::Object> range(const std::vector<std::shared_ptr<object::Object>>& args);
+std::shared_ptr<object::Object> map(const std::vector<std::shared_ptr<object::Object>>& args);
 
 } // namespace builtin
 } // namespace autumn

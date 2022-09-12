@@ -407,11 +407,29 @@ std::unique_ptr<ast::Expression> Parser::parse_if_expression() {
     // 如果有 alternative，继续解析
     if (peek_token_is(Token::ELSE)) {
         next_token();
-        if (!expect_peek(Token::LBRACE)) {
-            return nullptr;
+
+        std::unique_ptr <ast::BlockStatment> alternative;
+        if (peek_token_is(Token::IF)) {
+            next_token();
+            auto if_expression = parse_if_expression();
+            std::unique_ptr <ast::ExpressionStatment> if_statment(new ast::ExpressionStatment(_peek_token));
+            if_statment->set_expression(if_expression.release());
+            std::unique_ptr <ast::BlockStatment> block_statment(new ast::BlockStatment(_peek_token));
+            block_statment->append(if_statment.release());
+            alternative = std::move(block_statment);
         }
-        auto alternative = parse_block_statment();
+        else if (expect_peek(Token::LBRACE)) {
+            alternative = parse_block_statment();
+        }
+        if (alternative == nullptr) return nullptr;
+
         if_expression->set_alternative(alternative.release());
+
+        // if (!expect_peek(Token::LBRACE)) {
+        //     return nullptr;
+        // }
+        // auto alternative = parse_block_statment();
+        // if_expression->set_alternative(alternative.release());
     }
 
     return if_expression;

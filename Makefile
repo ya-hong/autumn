@@ -29,8 +29,8 @@ googletest:
 unitest:
 	$(MAKE) -C unitest
 
-autumn:repl/autumn.cc ./lib/libautumn.a
-	$(CXX) $(CXXFLAGS) -o $@ $< -L./lib -lautumn -lreadline
+autumn:repl/autumn.cc repl/run_code.cc  ./lib/libautumn.a
+	$(CXX) $(CXXFLAGS) -o $@ $< -L./lib -lautumn -lreadline -lpthread
 
 clean:
 	rm -rf lib objs *.gcov *.gcno *.gcda

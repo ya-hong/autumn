@@ -11,6 +11,7 @@ std::map<std::string, object::BuiltinFunction> BUILTINS = {
     {"push", push},
     {"rest", rest},
     {"puts", puts},
+    {"range", range},
 };
 
 std::shared_ptr<object::Object> len(const std::vector<std::shared_ptr<object::Object>>& args) {
@@ -112,6 +113,32 @@ std::shared_ptr<object::Object> puts(const std::vector<std::shared_ptr<object::O
         std::cout << e->inspect() << std::endl;
     }
     return object::constants::Null;
+}
+
+std::shared_ptr<object::Object> range(const std::vector<std::shared_ptr<object::Object>>& args) {
+    if (args.size() != 1 && args.size() != 2) {
+        return std::make_shared<object::Error>(format("wrong number of arguments. expected 1 or 2, got {}", args.size()));
+    }
+
+    for (auto &arg : args) {
+        if (typeid(*arg) != typeid(object::Integer)) {
+            return std::make_shared<object::Error>(
+                format("argument type to `range` is int, get {}", arg->type())
+            );
+        }
+    }
+    
+    int l = 0, r = 0;
+    r = args.back()->cast<object::Integer>()->value();
+    if (args.size() == 2) {
+        l = args.front()->cast<object::Integer>()->value();
+    }
+
+    auto obj = std::make_shared<object::Array>();
+    for (int i = l; i < r; ++i) {
+        obj->append(std::make_shared<object::Integer>(i));
+    }
+    return obj;
 }
 
 } // namespace builtin

@@ -7,6 +7,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "evaluator.h"
+#include "run_code.cc"
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -26,7 +27,16 @@ const std::map<std::string, std::function<void(const std::string&)>> REPLS = {
     {"eval", eval_repl},
 };
 
+
+void run_code(const std::string& path);
+
 int main(int argc, char* argv[]) {
+    std::cout << argv[1] << " " << argv[2] << std::endl;
+    if (argc > 2 && std::string(argv[1]) == std::string("run")) {
+        run_code(argv[2]);
+        return 0;
+    }
+    
     std::function<void(const std::string&)> repl(do_nothing);
     if (argc > 1) {
         auto it = REPLS.find(argv[1]);
